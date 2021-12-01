@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx" xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop.xsd">
+    <!-- 引入外部的配置文件 -->
+    <context:property-placeholder location="classpath:db.properties"/>
+    <!-- 1.配置数据源 -->
+    <bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource">
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="maxTotal" value="${jdbc.maxTotal}"/>
+        <property name="maxIdle" value="${jdbc.maxIdle}"/>
+        <property name="initialSize" value="${jdbc.initialSize}"/>
+    </bean>
+    <!-- 2.事务管理器，依赖于数据源 -->
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <!-- 3.开启注解事务 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+    <!-- 4.配置sqlSessionFactory -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <!--绑定mybatis-->
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+        <property name="mapperLocations" value="classpath:com/fy/mapper/*.xml"/>
+    </bean>
+    <!--    传统dao-->
+    <bean id="customerDao" class="com.fy.dao.impl.CustomerDaoImpl">
+        <!--setter方法注入-->
+        <property name="sqlSessionFactory" ref="sqlSessionFactory"/>
+    </bean>
+<!--    Mapper代理开发，基于MapperFactoryBean-->
+<!--        <bean id="customerMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">-->
+<!--            <property name="mapperInterface" value="com.fy.mapper.CustomerMapper"/>-->
+<!--            <property name="sqlSessionFactory" ref="sqlSessionFactory"/>-->
+<!--        </bean>-->
+    <!-- Mapper代理开发（基于MapperScannerConfigurer） -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.fy.mapper"/>
+    </bean>
+    <!-- 开启注解的扫描 -->
+    <context:component-scan base-package="com.fy.service"/>
+</beans>
